@@ -102,7 +102,7 @@ public class CoolWeatherDB {
 		if(cursor.moveToFirst()){
 			do{
 				County county = new County();
-				county.setId(cursor.getInt(cursor.getColumnIndex("countId")));
+				county.setId(cursor.getInt(cursor.getColumnIndex("id")));
 				county.setCountyCode(cursor.getString(cursor.getColumnIndex("county_code")));
 				county.setCountyName(cursor.getString(cursor.getColumnIndex("county_name")));
 				county.setCityId(cityId);

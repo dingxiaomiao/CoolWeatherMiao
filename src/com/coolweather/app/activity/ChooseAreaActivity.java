@@ -30,7 +30,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class ChooseAreaActivity extends Activity {
+public class ChooseAreaActivity extends Activity  {
 	public static final int LEVEL_PROVINCE = 0;
 	public static final int LEVEL_CITY = 1;
 	public static final int LEVEL_COUNTY = 2;
@@ -48,15 +48,16 @@ public class ChooseAreaActivity extends Activity {
 
 	private Province selectedProvince;
 	private City selectedCity;
-	private County seletedCounty;
-
+	private County selectedCounty;
+	private boolean isFromWeatherActivity;
 	private int currentLevel;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		if(prefs.getBoolean("city_selected", false)){
+		isFromWeatherActivity = getIntent().getBooleanExtra("from_weather_activity", false);
+		if(prefs.getBoolean("city_selected", false) && isFromWeatherActivity){
 			Intent intent = new Intent(this,WeatherActivity.class);
 			startActivity(intent);
 			finish();
@@ -66,7 +67,7 @@ public class ChooseAreaActivity extends Activity {
 		setContentView(R.layout.choose_area);
 		listView = (ListView) findViewById(R.id.list_view);
 		titleText = (TextView) findViewById(R.id.title_text);
-		adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1,
+		adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1,
 				dataList);
 		listView.setAdapter(adapter);
 		coolWeatherDB = CoolWeatherDB.getInstance(this);
@@ -83,6 +84,7 @@ public class ChooseAreaActivity extends Activity {
 				}else if(currentLevel == LEVEL_COUNTY){
 					String countyCode = countyList.get(index).getCountyCode();
 					Intent intent = new Intent(ChooseAreaActivity.this,WeatherActivity.class);
+					intent.putExtra("county_code",countyCode);
 					startActivity(intent);
 					finish();
 				}
@@ -125,6 +127,18 @@ public class ChooseAreaActivity extends Activity {
 //	根据用户点击市级listview的index，进入指定市级下面的县级菜单
 	private void queryCounties(){
 		countyList = coolWeatherDB.loadCounties(selectedCity.getId());
+		if(countyList.size() >0){
+			dataList.clear();
+			for(County county:countyList){
+				dataList.add(county.getCountyName());
+			}
+			adapter.notifyDataSetChanged();
+			listView.setSelection(0);
+			titleText.setText(selectedCity.getCityName());
+			currentLevel = LEVEL_COUNTY;
+		}else{
+			queryFromServer(selectedCity.getCityCode(),"county");
+		}
 	}
 //	根据传入的代号和类型从服务器中查询省市县数据
 	private void queryFromServer(final String code,final String type){
@@ -196,6 +210,10 @@ public class ChooseAreaActivity extends Activity {
 		}else if(currentLevel == LEVEL_CITY){
 			queryProvinces();
 		}else{
+			if(isFromWeatherActivity){
+				Intent intent = new Intent(this,WeatherActivity.class);
+				startActivity(intent);
+			}
 			finish();
 		}
 	}
